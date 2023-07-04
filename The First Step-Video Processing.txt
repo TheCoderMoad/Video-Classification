@@ -1,0 +1,29 @@
+import os
+import cv2
+
+def extract_frames(video_path, output_dir, interval):
+    video = cv2.VideoCapture(video_path)
+    success, image = video.read()
+    count = 0
+    
+    while success:
+        if count % interval == 0:
+            frame_name = f"frame_{count}.jpg"
+            output_path = os.path.join(output_dir, frame_name)
+            cv2.imwrite(output_path, image)
+        
+        success, image = video.read()
+        count += 1
+    
+    video.release()
+
+# Example usage
+video_dir = "path/to/videos"
+output_dir = "path/to/output"
+interval = 10
+
+# Iterate through video files in the directory
+for filename in os.listdir(video_dir):
+    if filename.endswith(".mp4"):  # Adjust the condition based on your video file format
+        video_path = os.path.join(video_dir, filename)
+        extract_frames(video_path, output_dir, interval)
