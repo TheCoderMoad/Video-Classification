@@ -1,0 +1,71 @@
+import cv2
+import numpy as np
+
+def perform_object_detection(frame, model):
+    # Preprocess the frame for object detection
+    blob = cv2.dnn.blobFromImage(frame, 0.00392, (416, 416), (0, 0, 0), True, crop=False)
+    height, width, channels = frame.shape
+    
+    # Set the input of the model
+    model.setInput(blob)
+    
+    # Obtain the output layers of the model
+    layer_names = model.getLayerNames()
+   output_layers = [layer_names[i - 1]  for i in model.getUnconnectedOutLayers()]
+    
+    # Forward pass through the network
+    outputs = model.forward(output_layers)
+    
+    # Perform object detection
+    class_ids = []
+    confidences = []
+    boxes = []
+    
+    for output in outputs:
+        for detection in output:
+            scores = detection[5:]
+            class_id = np.argmax(scores)
+            confidence = scores[class_id]
+            
+            if confidence > 0.5:
+                center_x = int(detection[0] * width)
+                center_y = int(detection[1] * height)
+                w = int(detection[2] * width)
+                h = int(detection[3] * height)
+                
+                # Rectangle coordinates
+                x = int(center_x - w / 2)
+                y = int(center_y - h / 2)
+                
+                class_ids.append(class_id)
+                confidences.append(float(confidence))
+                boxes.append([x, y, w, h])
+    
+    return class_ids, confidences, boxes
+
+# Example usage
+frame_path = "C:/Users/Anilkumar/Documents/Personal projects/Video footage analysis/moadelamarti-attachments2/Images/frameName.jpeg"
+model_weights = "C:/Users/Anilkumar/Documents/Personal projects/Video footage analysis/moadelamarti-attachments2/yolov3.weights"
+ model_config = "C:/Users/Anilkumar/Documents/Personal projects/Video footage analysis/moadelamarti-attachments2/yolov3.cfg"
+classes_file = "C:/Users/Anilkumar/Documents/Personal projects/Video footage analysis/moadelamarti-attachments2/classes.txt"
+
+# Load the pre-trained model and classes
+model = cv2.dnn.readNet(model_weights, model_config)
+with open(classes_file, 'r') as f:
+    classes = f.read().splitlines()
+
+# Load the frame
+frame = cv2.imread(frame_path)
+
+# Perform object detection
+class_ids, confidences, boxes = perform_object_detection(frame, model)
+
+# Print the detected objects
+for i in range(len(class_ids)):
+    class_id = class_ids[i]
+    confidence = confidences[i]
+    box = boxes[i]
+    class_name = classes[class_id]
+    
+    print(f"Detected object: {class_name} (confidence: {confidence})")
+    print(f"Bounding box coordinates: {box}\n")
